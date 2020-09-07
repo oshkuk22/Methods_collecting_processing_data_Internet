@@ -1,6 +1,8 @@
-import requests
-from bs4 import BeautifulSoup as bfs
+# -*- coding: utf-8 -*-
 
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup as bfs
 
 hh_link = 'https://hh.ru/'
 
@@ -20,23 +22,64 @@ html_hh = requests.get(hh_link + 'search/vacancy', headers=header, params=params
 
 html_for_parsing = bfs(html_hh.text, 'html.parser')
 
-div_class_vacancy = html_for_parsing.find_all('div', {'class': 'vacancy-serp-item'})
+# div_class_vacancy = html_for_parsing.find_all('div', {'class': 'vacancy-serp-item'})
 
-info_about_vacancy = dict()
-name_vacancy = list()
-salary = list()
-salary_all = dict()
+a_button = html_for_parsing.find_all('a', {'class': 'bloko-button'})
 
-for i in div_class_vacancy:
-    a_href = i.find('a').getText()
-    name_vacancy.append(a_href)
-    # salary_value = i.findChildren(recursive=False)
-    list_span = i.find_all('span', {'class': 'bloko-section-header-3'})
-    try:
-        salary.append(list_span[1].getText().replace('\xa0', '').split())
-        # if len
-    except IndexError:
-        salary.append(['нет сведений о заработной плате'])
-    # salary_value = i.find('div', {'class': 'bloko-section-header-3'})
+count_page = int(a_button[len(a_button) - 2].getText())
 
-print((salary))
+vacancy = list()
+
+salary = dict()
+
+for page in range(count_page):
+    params['page'] = page
+    html_hh = requests.get(hh_link + 'search/vacancy', headers=header, params=params)
+    html_for_parsing = bfs(html_hh.text, 'html.parser')
+    div_class_vacancy = html_for_parsing.find_all('div', {'class': 'vacancy-serp-item'})
+
+    for i in div_class_vacancy:
+        info_about_vacancy = {}
+        salary = {}
+        a_href = i.find('a').getText()
+        info_about_vacancy['vacancy name'] = a_href
+
+        a_href_vacancy = i.find('a').get('href')
+        info_about_vacancy['vacancy link'] = a_href_vacancy
+        list_span = i.find_all('span', {'class': 'bloko-section-header-3'})
+
+        try:
+            list_for_pars = list_span[1].getText().replace('\xa0', '').split()
+
+            if len(list_for_pars) == 2:
+                salary['minimum'] = int(list_for_pars[0].split('-')[0])
+                salary['maximum'] = int(list_for_pars[0].split('-')[1])
+                salary['currency'] = list_for_pars[1]
+                info_about_vacancy['salary'] = salary
+
+            elif len(list_for_pars) == 3:
+                if list_for_pars[0] == u'от':
+                    salary['minimum'] = int(list_for_pars[1])
+                    salary['maximum'] = u'нет сведений'
+                    salary['currency'] = list_for_pars[2]
+                else:
+                    salary['minimum'] = u'нет сведений'
+                    salary['maximum'] = int(list_for_pars[1])
+                    salary['currency'] = list_for_pars[2]
+            info_about_vacancy['salary'] = salary
+
+        except IndexError:
+            info_about_vacancy['salary'] = u'нет сведений о заработной плате'
+        try:
+            a_href_info_suite = i.find('a', {'class': 'bloko-link_secondary'}).getText()
+            info_about_vacancy['suite_info'] = a_href_info_suite
+        except AttributeError:
+            info_about_vacancy['suite_info'] = 'нет информации'
+
+        list_span_city = i.find('span', {'class': 'vacancy-serp-item__meta-info'}).getText()
+        info_about_vacancy['city'] = list_span_city
+
+        vacancy.append(info_about_vacancy)
+
+info_parsing = pd.DataFrame(vacancy)
+info_parsing.to_csv('Parsing_html_bs/python_vacancy.csv', index=False)
