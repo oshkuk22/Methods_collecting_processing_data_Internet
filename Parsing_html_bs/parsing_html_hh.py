@@ -82,4 +82,4 @@ for page in range(count_page):
         vacancy.append(info_about_vacancy)
 
 info_parsing = pd.DataFrame(vacancy)
-info_parsing.to_csv('Parsing_html_bs/python_vacancy.csv', index=False)
+info_parsing.to_csv('Parsing_html_bs/python_vacancy_hh.csv', index=False)
