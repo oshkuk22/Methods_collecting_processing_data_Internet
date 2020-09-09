@@ -13,6 +13,13 @@ collection_name = 'hh_ru'
 db_user = 'vacancy'
 db_pwd = 'vacancy!'
 
+
+def insert_db(db, coll_name, vacancy_list):
+    for j in vacancy_list:
+        if not db[coll_name].find_one(j):
+            db[coll_name].insert_one(j)
+
+
 try:
     client = MongoClient(host_name, port_name,
                          username=db_user,
@@ -97,12 +104,8 @@ try:
             vacancy.append(info_about_vacancy)
 
     data_base = client[db_name]
-    count = 0
-    for i in vacancy:
-        if data_base[collection_name].find_one(i):
-            print('Такая вакансия уже есть в базе')
-        else:
-            data_base[collection_name].insert_one(i)
+
+    insert_db(data_base, collection_name, vacancy)
 
 except ConnectionFailure:
     print(u'Сервер MongoDB не доступен')
