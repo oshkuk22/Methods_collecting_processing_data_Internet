@@ -20,6 +20,11 @@ def insert_db(db, coll_name, vacancy_list):
             db[coll_name].insert_one(j)
 
 
+def find_vacancy(db, coll_name):
+    count_document = db[coll_name].find()
+    print(count_document)
+
+
 try:
     client = MongoClient(host_name, port_name,
                          username=db_user,
@@ -106,6 +111,9 @@ try:
     data_base = client[db_name]
 
     insert_db(data_base, collection_name, vacancy)
+
+    find_vacancy(data_base, collection_name)
+
 
 except ConnectionFailure:
     print(u'Сервер MongoDB не доступен')
