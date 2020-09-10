@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import requests
+from pprint import pprint
 from bs4 import BeautifulSoup as bfs
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
@@ -15,14 +16,50 @@ db_pwd = 'vacancy!'
 
 
 def insert_db(db, coll_name, vacancy_list):
+
     for j in vacancy_list:
         if not db[coll_name].find_one(j):
             db[coll_name].insert_one(j)
 
 
-def find_vacancy(db, coll_name):
-    count_document = db[coll_name].find()
-    print(count_document)
+def find_vacancy(db, coll_name, currency_, *args):
+
+    document = db[coll_name].find({'salary.currency': currency_})
+
+    for z in document:
+        try:
+            if len(args) == 1:
+                if z['salary']['maximum'] != u'нет сведений':
+                    if args[0] < z['salary']['maximum']:
+                        z.pop('_id')
+                        pprint(z)
+                elif int(z['salary']['minimum']) < args[0] < int(z['salary']['maximum']):
+                    z.pop('_id')
+                    pprint(z)
+            elif len(args) == 2:
+                if z['salary']['maximum'] != u'нет сведений':
+                    if args[0] < z['salary']['maximum'] and args[1] < z['salary']['maximum']:
+                        z.pop('_id')
+                        pprint(z)
+                elif args[0] > args[1]:
+                    if args[1] > int(z['salary']['minimum']) and args[0] < int(z['salary']['maximum']):
+                        z.pop('_id')
+                        pprint(z)
+                elif args[0] < args[1]:
+                    if args[0] > int(z['salary']['minimum']) and args[1] < int(z['salary']['maximum']):
+                        z.pop('_id')
+                        pprint(z)
+                else:
+                    if int(z['salary']['minimum']) < args[0] < int(z['salary']['maximum']):
+                        z.pop('_id')
+                        pprint(z)
+            else:
+                raise AttributeError('Недопустимое кличество аргументов')
+
+        except TypeError:
+            pass
+        except ValueError:
+            pass
 
 
 try:
@@ -112,8 +149,7 @@ try:
 
     insert_db(data_base, collection_name, vacancy)
 
-    find_vacancy(data_base, collection_name)
-
+    find_vacancy(data_base, collection_name, 'руб.', 200000, 250000)
 
 except ConnectionFailure:
     print(u'Сервер MongoDB не доступен')
