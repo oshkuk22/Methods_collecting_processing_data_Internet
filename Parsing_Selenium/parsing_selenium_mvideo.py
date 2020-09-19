@@ -11,6 +11,7 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 host_name = '192.168.1.35'
 port_name = 61290
 db_name = 'se_parsing'
+
 collection_name = 'mvideo'
 db_user = 'se_parsing'
 db_pwd = 'se_parsing!'
